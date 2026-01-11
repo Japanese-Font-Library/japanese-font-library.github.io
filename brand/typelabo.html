@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>タイプラボ｜日本語ふぉんとライブラリ</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-color: #FF0000;
+      --font-medium: "Noto Sans JP", sans-serif;
+      --font-regular: "Noto Sans JP", sans-serif;
+      --text-primary: #1E1E28;
+      --text-secondary: #787882;
+      --text-placeholder: #A0A0AA;
+      --border-color: #CDCDE1;
+      --background-primary: #FFFFFF;
+      --background-secondary: #F5F5FF;
+      --text-specified: rgb(30, 30, 40);
+      --spacing-specified: 0.6px;
+    }
+
+    html { box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: inherit; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--background-primary);
+      font-family: var(--font-medium);
+      font-weight: 700; 
+      font-feature-settings: "palt";
+      -webkit-font-feature-settings: "palt";
+      -moz-font-feature-settings: "palt";
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.3s ease;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body.menu-open #page-container,
+    body.menu-open #font-sample {
+      filter: blur(4px);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      left: 0;
+      width: 100%;
+      height: 20px;
+      z-index: 80;
+      pointer-events: none;
+    }
+    body::before {
+      top: 50px;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.05), transparent);
+    }
+    body::after {
+      bottom: 140px;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.05), transparent);
+    }
+
+    img {
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+    
+    #page-container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      width: 100%;
+      transition: filter 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    }
+
+    #header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      display: flex;
+      align-items: stretch;
+      z-index: 90;
+    }
+
+    main {
+      padding-top: 50px;
+      padding-bottom: 140px;
+      flex: 1;
+      overflow-y: auto;
+      width: 100%;
+    }
+
+    #font-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 200px);
+      justify-content: center;
+      padding-top: 20px;
+      padding-bottom: 20px;
+    }
+    
+    #no-results {
+      text-align: center;
+      margin-top: 50px;
+      color: var(--text-secondary);
+      display: none;
+    }
+
+    #font-sample {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 150px;
+      background-color: var(--background-secondary);
+      z-index: 90;
+      border-top: 1px solid #E0E0E0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 20px;
+      box-sizing: border-box;
+      transition: filter 0.3s ease-in-out;
+    }
+    
+    #title {
+      flex-shrink: 0;
+      width: 257px;
+      background-color: var(--background-secondary);
+      position: relative;
+    }
+    #title a img {
+      pointer-events: auto;
+    }
+    #title img.logo-large {
+      position: absolute;
+      left: 20px;
+      top: 10px;
+      width: 217px;
+      height: 30px;
+    }
+    #title img.logo-small {
+      display: none;
+      position: absolute;
+    }
+
+    #brand {
+      flex-shrink: 0;
+      background-color: var(--brand-color);
+      color: var(--background-primary);
+      letter-spacing: var(--spacing-specified);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0 40px;
+      white-space: nowrap;
+      border-radius: 0 0 8px 8px;
+    }
+    .brand-name { font-size: 16px; line-height: 1; margin-bottom: 6px; }
+    .brand-subname { font-size: 10px; line-height: 0.5; }
+
+    #explanation {
+      flex-grow: 1;
+      background-color: var(--background-secondary);
+      padding: 9px 15px 15px;
+      font-size: 12px;
+      line-height: 16px;
+      font-family: var(--font-regular);
+      color: var(--text-specified);
+      letter-spacing: var(--spacing-specified);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    @keyframes tile-fade-in {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .font-tile {
+      width: 200px;
+      height: 190px;
+      position: relative;
+      cursor: pointer;
+      opacity: 0;
+      animation: tile-fade-in 0.4s ease-out forwards;
+    }
+    .tile-square {
+      position: absolute;
+      left: 30px;
+      top: 5px;
+      width: 140px;
+      height: 140px;
+      border-radius: 20px;
+      border: 1px solid #F0F0FA;
+      overflow: hidden;
+      transition: background-color 0.3s ease;
+      box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .tile-square::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 0;
+      background-color: #D7EBFF;
+      transition: height 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    .font-tile:hover .tile-square::before,
+    .font-tile.active .tile-square::before { height: 100%; }
+    .tile-svg {
+      position: absolute;
+      left: 50px;
+      top: 25px;
+      width: 100px;
+      height: 100px;
+      transition: filter 0.3s ease;
+    }
+    .font-tile:hover .tile-svg,
+    .font-tile.active .tile-svg { filter: brightness(0) invert(0); }
+    
+    .font-name-wrapper {
+      position: absolute;
+      bottom: 15px;
+      left: 10px;
+      width: 180px;
+      display: flex;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .font-name {
+      white-space: nowrap;
+      font-size: 14px;
+      color: #1E1E1E;
+      transform-origin: center;
+      display: inline-block;
+    }
+
+    .sample-container, .font-info-wrapper, .sample-divider-line, .sample-text-svg, .font-description { position: absolute; }
+    .sample-container { width: 100%; height: 100%; transition: opacity 0.3s ease-in-out; }
+    .font-info-wrapper, .sample-divider-line, .sample-text-svg, .font-description { left: 0; transform: none; }
+    .font-info-wrapper { top: 2px; width: 1020px; height: 38px; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; box-sizing: border-box; }
+    .font-info-left, .font-info-right { display: flex; align-items: center; height: 100%; }
+    .font-info-left { min-width: 0; }
+    .font-info-right { flex-shrink: 0; }
+    .info-font-name { font-family: var(--font-medium); font-size: 18px; color: var(--brand-color); white-space: nowrap; line-height: 38px; position: relative; top: 1px; }
+    .info-divider { width: 1px; height: 26px; background-color: var(--border-color); margin: 0 10px; flex-shrink: 0; }
+    .info-item-group { display: flex; flex-direction: column; justify-content: center; flex-shrink: 0; }
+    .info-label { font-size: 9px; color: var(--brand-color); white-space: nowrap; position: relative; top: 0px; user-select: none; }
+    .info-value { font-size: 14px; color: var(--text-primary); white-space: nowrap; position: relative; bottom: 2px; }
+    .toggle-container { display: flex; flex-direction: column; justify-content: center; font-size: 11px; line-height: 1.2; white-space: nowrap; margin-left: -4px; }
+    .toggle-container label { display: flex; align-items: center; cursor: pointer; position: relative; top: 0; user-select: none; }
+    .toggle-container input[type="radio"] { position: relative; top: -1px; }
+    .toggle-container .toggle-label-text { position: relative; top: 1px; }
+    .format-icons { display: flex; align-items: center; gap: 4px; }
+    .format-icons img { width: 22px; height: 32px; }
+    .sample-divider-line { top: 40px; width: 1020px; height: 1px; background-color: var(--border-color); }
+    .sample-text-svg { top: 42px; width: 1040px; height: 80px; }
+    
+    .font-description { 
+      top: 122px; 
+      width: 1040px; 
+      text-align: center; 
+      font-size: 12px; 
+      letter-spacing: var(--spacing-specified); 
+      font-family: var(--font-regular);
+      color: var(--text-specified);
+      font-weight: 500;
+    }
+
+    .font-description span {
+      background-image: linear-gradient(90deg, #00966E26, #005AE626, #7828B426);
+      background-size: 100% 4px;
+      background-repeat: no-repeat;
+      background-position: left bottom;
+    }
+    
+    .format-icon-wrapper { position: relative; display: flex; align-items: center; }
+    .format-icon-wrapper .tooltip-text {
+      visibility: hidden; opacity: 0; width: max-content; background-color: rgba(245, 245, 255, 0.9);
+      color: var(--text-secondary); font-size: 12px; text-align: right; border-radius: 4px;
+      padding: 6px 10px; position: absolute; z-index: 9999; top: 50%; right: 115%;
+      transform: translateY(-50%); transition: opacity 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      pointer-events: none;
+    }
+    .format-icon-wrapper .tooltip-text::after {
+      content: ""; position: absolute; top: 50%; left: 100%; margin-top: -5px;
+      border-width: 5px; border-style: solid; border-color: transparent transparent transparent rgba(245, 245, 255, 0.8);
+    }
+    .format-icon-wrapper:hover .tooltip-text { visibility: visible; opacity: 1; }
+    
+    #hamburger-button {
+      position: fixed;
+      right: 0;
+      top: 0;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      z-index: 110;
+      background-color: var(--background-secondary);
+      border-left: 1px solid #E0E0E0;
+    }
+    .hamburger-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 2px;
+      background-color: var(--text-primary);
+      transition: background-color 0.3s ease-in-out;
+    }
+    .hamburger-icon::before,
+    .hamburger-icon::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--text-primary);
+      transition: transform 0.3s ease-in-out;
+    }
+    .hamburger-icon::before { transform: translateY(-8px); }
+    .hamburger-icon::after { transform: translateY(8px); }
+
+    #hamburger-button.active .hamburger-icon { background-color: transparent; }
+    #hamburger-button.active .hamburger-icon::before { transform: translateY(0) rotate(45deg); }
+    #hamburger-button.active .hamburger-icon::after { transform: translateY(0) rotate(-45deg); }
+    
+    #side-menu {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 500px;
+      height: 100%;
+      background-color: var(--background-secondary);
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+      z-index: 100;
+      padding: 70px 25px 25px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    body.menu-open #side-menu {
+      transform: translateX(0);
+      box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    }
+    
+    #filter-results-counter {
+        position: absolute;
+        top: 15px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 15px;
+    }
+    #filter-results-counter .count-number,
+    #filter-results-counter .count-separator {
+        font-size: 20px;
+    }
+    
+    .filter-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;}
+    .filter-group label {
+      font-size: 14px;
+      color: var(--text-primary);
+      margin-bottom: 0;
+    }
+    .input-wrapper {
+      position: relative;
+    }
+    .input-wrapper::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      background-image: url('../assets/search.svg');
+      background-repeat: no-repeat;
+      background-size: contain;
+    }
+    .input-wrapper.no-icon::before {
+      display: none;
+    }
+    .input-wrapper.no-icon .custom-dropdown-input {
+      padding-left: 12px;
+    }
+    .filter-group input, .filter-group select {
+      width: 100%;
+      height: 40px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      padding: 0 10px 0 34px;
+      font-family: var(--font-medium);
+      font-size: 14px;
+      background-color: var(--background-primary);
+      color: var(--text-primary);
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+    .filter-group input::placeholder { color: var(--text-placeholder); }
+    .filter-group select {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%238C8C96' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 12px;
+      cursor: pointer;
+    }
+
+    .custom-dropdown { position: relative; cursor: pointer; }
+    .custom-dropdown-input {
+      padding-right: 30px !important;
+      cursor: pointer;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%238C8C96' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 12px;
+    }
+    .custom-dropdown-list {
+      display: none;
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0;
+      width: 100%;
+      max-height: 250px;
+      overflow-y: auto;
+      background-color: var(--background-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      z-index: 101;
+      padding: 5px;
+    }
+    .custom-dropdown-list.show { display: block; }
+    .custom-dropdown-list .search-in-dropdown {
+        width: calc(100% - 10px);
+        height: 30px;
+        margin: 5px;
+        padding: 0 10px;
+        border: 1px solid #E0E0E0;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    .custom-dropdown-item {
+      padding: 8px 10px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .custom-dropdown-item:hover { background-color: var(--background-secondary); }
+    .custom-dropdown-item label {
+        width:100%; 
+        cursor:pointer;
+        position: relative;
+        top: 1px;
+    }
+
+    .custom-dropdown-item input[type="checkbox"],
+    .custom-dropdown-item input[type="radio"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background-color: var(--background-primary);
+      margin: 0;
+      margin-right: 10px;
+      padding: 0;
+      font: inherit;
+      color: currentColor;
+      width: 16px;
+      height: 16px;
+      aspect-ratio: 1 / 1;
+      border: 1px solid var(--border-color);
+      flex-shrink: 0;
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      transition: background-color 0.1s, border-color 0.1s;
+      box-sizing: border-box;
+    }
+    .custom-dropdown-item input[type="checkbox"] {
+      border-radius: 4px;
+    }
+    .custom-dropdown-item input[type="radio"] {
+      border-radius: 50%;
+    }
+
+    .custom-dropdown-item input[type="checkbox"]::before {
+      content: "";
+      width: 0.65em;
+      height: 0.65em;
+      transform: translate(-1px, 2px) scale(0);
+      transition: 120ms transform ease-in-out;
+      box-shadow: inset 1em 1em var(--background-primary);
+      transform-origin: bottom left;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+    .custom-dropdown-item input[type="radio"]::before {
+      content: "";
+      width: 0.65em;
+      height: 0.65em;
+      border-radius: 50%;
+      transform: scale(0);
+      transition: 120ms transform ease-in-out;
+      box-shadow: inset 1em 1em var(--background-primary);
+    }
+
+    .custom-dropdown-item input[type="checkbox"]:checked,
+    .custom-dropdown-item input[type="radio"]:checked {
+      background-color: var(--brand-color);
+      border-color: var(--brand-color);
+    }
+    .custom-dropdown-item input[type="checkbox"]:checked::before {
+      transform: translate(-1px, 2px) scale(1.2);
+    }
+    .custom-dropdown-item input[type="radio"]:checked::before {
+      transform: scale(1);
+    }
+
+    #sort-order-list .custom-dropdown-item input[type="radio"] {
+      border-radius: 4px;
+    }
+    #sort-order-list .custom-dropdown-item input[type="radio"]::before {
+      border-radius: 0;
+      transform-origin: bottom left;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+      transform: translate(-1px, 2px) scale(0);
+    }
+    #sort-order-list .custom-dropdown-item input[type="radio"]:checked::before {
+      transform: translate(-1px, 2px) scale(1.2);
+    }
+    
+    .copyright-notice {
+      margin-top: auto;
+      padding-top: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    @media (min-width: 1041px) {
+      .font-info-wrapper, .sample-divider-line, .sample-text-svg, .font-description {
+        left: 50%; transform: translateX(-50%);
+      }
+    }
+
+    @media (max-width: 1040px) {
+      main { padding-bottom: 157px; }
+      body::after { bottom: 157px; }
+      #header { background-color: var(--brand-color); }
+      #title { width: 80px; background-color: var(--background-secondary); }
+      #title img.logo-large { display: none; }
+      #title img.logo-small { display: block; left: 20px; top: 10px; width: 40px; height: 30px; }
+      #brand { position: absolute; left: 50%; top: 0; height: 100%; transform: translateX(-50%); z-index: 1; }
+      #explanation { background-color: transparent; color: transparent; user-select: none; }
+      #font-sample { justify-content: flex-start; overflow-x: auto; overflow-y: hidden; padding: 0 0 0 20px; height: 157px; }
+      #font-sample .sample-container { position: relative; width: 1040px; flex-shrink: 0; }
+      #font-sample .sample-container + .sample-container { margin-left: -1040px; }
+      #hamburger-button { background-color: var(--brand-color); border-left: none; }
+      .hamburger-icon, .hamburger-icon::before, .hamburger-icon::after { background-color: var(--background-primary); }
+      #side-menu { width: 100%; }
+      
+      .font-description {
+        text-align: left;
+        padding-left: 10px;
+        width: 1020px;
+        box-sizing: border-box;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header id="header">
+    <div id="title">
+      <a href="../index.html"><img class="logo-large" src="../assets/logo.svg" alt="日本語ふぉんとライブラリ"></a>
+      <a href="../index.html"><img class="logo-small" src="../assets/logo2.svg" alt="日本語ふぉんとライブラリ"></a>
+    </div>
+    <div id="brand">
+      <div class="brand-name">タイプラボ</div>
+      <div class="brand-subname">（有）タイプラボ</div>
+    </div>
+    <div id="explanation">タイプラボは、書体デザイナー・佐藤豊氏によるオリジナルフォントブランド。<br>数多くのフォントが、モリサワやフォントワークスなど、フォントメーカー各社にライセンス提供されている。</div>
+  </header>
+
+  <div id="page-container">
+    <main>
+      <div id="font-list"></div>
+      <div id="no-results">該当するフォントが見つかりませんでした</div>
+    </main>
+  </div>
+
+  <footer id="font-sample"></footer>
+
+  <div id="hamburger-button">
+    <div class="hamburger-icon"></div>
+  </div>
+
+  <nav id="side-menu">
+    <div id="filter-results-counter"></div>
+
+    <div class="filter-group">
+      <label for="sort-order-input">並び順</label>
+      <div class="input-wrapper custom-dropdown no-icon" id="sort-order-dropdown">
+        <input type="text" class="custom-dropdown-input" id="sort-order-input" placeholder="並び順を選択" readonly>
+        <div class="custom-dropdown-list">
+          <div id="sort-order-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label for="search-font-name">フォント名</label>
+      <div class="input-wrapper">
+        <input type="text" id="search-font-name" placeholder="フォント名で検索">
+      </div>
+    </div>
+    
+    <div class="filter-group">
+      <label for="filter-category">カテゴリ</label>
+      <div class="input-wrapper custom-dropdown" id="category-dropdown">
+        <input type="text" class="custom-dropdown-input" id="filter-category" placeholder="カテゴリで絞り込む" readonly>
+        <div class="custom-dropdown-list">
+          <input type="text" class="search-in-dropdown" placeholder="キーワード検索">
+          <div id="category-list"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="filter-group">
+      <label for="filter-release-year">リリース年</label>
+      <div class="input-wrapper custom-dropdown" id="release-year-dropdown">
+        <input type="text" class="custom-dropdown-input" id="filter-release-year" placeholder="リリース年で絞り込む" readonly>
+        <div class="custom-dropdown-list">
+          <input type="text" class="search-in-dropdown" placeholder="キーワード検索">
+          <div id="release-year-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-designer">デザイナー</label>
+      <div class="input-wrapper custom-dropdown" id="designer-dropdown">
+        <input type="text" class="custom-dropdown-input" id="filter-designer" placeholder="デザイナーで絞り込む" readonly>
+        <div class="custom-dropdown-list">
+          <input type="text" class="search-in-dropdown" placeholder="キーワード検索">
+          <div id="designer-list"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="filter-group">
+        <label for="filter-format">フォーマット</label>
+        <div class="input-wrapper custom-dropdown" id="format-dropdown">
+            <input type="text" class="custom-dropdown-input" id="filter-format" placeholder="フォーマットで絞り込む" readonly>
+            <div class="custom-dropdown-list">
+              <input type="text" class="search-in-dropdown" placeholder="キーワード検索">
+              <div id="format-list"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="copyright-notice">© Japanese Font Library</div>
+  </nav>
+
+  <script>
+    if (history.scrollRestoration) {
+      history.scrollRestoration = 'manual';
+    }
+
+    let allFonts = [];
+    let activeFont = null;
+    let transitionTimeoutId = null;
+    let isInitialLoad = true; 
+    
+    const tooltipMap = { 'PS1': 'PostScript（OCF/CID）フォント', 'PS4': '【終売】PostScript（OCF/CID）フォント', 'TT1': 'TrueTypeフォント', 'TT2': 'TrueTypeフォント（プロポーショナル/等幅フォント）', 'TT3': 'TrueTypeフォント（バリアブルフォント）', 'TT4': '【終売】TrueTypeフォント', 'OT1': 'OpenTypeフォント', 'OT2': 'OpenTypeフォント（バリアブルフォント）',  'OT4': '【終売】OpenTypeフォント'};
+
+    const categoryCodeMap = {
+        '01': '明朝体', '02': '角ゴシック体', '03': '丸ゴシック体', '04': '楷書体', '05': '行書体',
+        '06': '教科書体', '07': '宋朝体', '08': '清朝体', '09': '隷書体', '10': '古印体',
+        '11': '草書体', '12': '篆書体', '13': '印相体', '14': '甲骨文字', '15': '毛筆書体',
+        '16': '勘亭流', '17': '寄席文字', '18': '籠文字', '19': '相撲文字', '20': '髭文字',
+        '21': '角字', '22': 'POP体', '23': 'デザイン書体', '24': 'アンチック体', '25': 'シネマ書体',
+        '26': 'ペン字体', '27': '手書き風書体', '28': 'ストローク書体', '29': 'ビットマップ風書体'
+    };
+    
+    const extraCategories = ['連綿体', '装飾書体', '新聞書体', 'UD書体', '学参書体', 'コンデンス書体', 'かな書体', 'カナ書体'];
+    const masterCategoryOrder = Object.keys(categoryCodeMap).sort().map(key => categoryCodeMap[key]).concat(extraCategories);
+
+    function getFontCategoryName(font) {
+        if (!font || !font['コード'] || font['コード'].length < 4) return null;
+        const code = font['コード'].substring(2, 4);
+        return categoryCodeMap[code] || null;
+    }
+
+    function loadFontCallback(data) {
+      allFonts = data.filter(item => item["メーカー"] === "タイプラボ");
+      populateFilters();
+      syncFormFromURL();
+      applyFiltersAndSort(false);
+      isInitialLoad = false;
+    }
+
+    function updateURLParams() {
+      const params = new URLSearchParams();
+      
+      const sort = document.querySelector('#sort-order-list input[type="radio"]:checked')?.value;
+      if (sort && sort !== 'category') params.set('sort', sort);
+
+      const name = document.getElementById('search-font-name').value;
+      if (name) params.set('name', name);
+
+      const categories = getSelectedCheckboxes('category-list');
+      if (categories.length) params.set('cat', categories.join(','));
+
+      const years = getSelectedCheckboxes('release-year-list');
+      if (years.length) params.set('year', years.join(','));
+
+      const designers = getSelectedCheckboxes('designer-list');
+      if (designers.length) params.set('des', designers.join(','));
+
+      const formats = getSelectedCheckboxes('format-list');
+      if (formats.length) params.set('fmt', formats.join(','));
+
+      const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}${window.location.hash}`;
+      window.history.pushState(null, '', newUrl);
+    }
+
+    function syncFormFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      
+      document.querySelectorAll('#sort-order-list input[type="radio"]').forEach(r => r.checked = (r.value === 'category'));
+      if (params.has('sort')) {
+        const radio = document.querySelector(`#sort-order-list input[value="${params.get('sort')}"]`);
+        if (radio) radio.checked = true;
+      }
+      
+      document.getElementById('search-font-name').value = params.get('name') || '';
+
+      const syncCheckboxes = (paramKey, containerId) => {
+        const container = document.getElementById(containerId);
+        container.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        if (params.has(paramKey)) {
+          const vals = params.get(paramKey).split(',');
+          vals.forEach(v => {
+            const cb = container.querySelector(`input[value="${v}"]`);
+            if (cb) cb.checked = true;
+          });
+        }
+      };
+
+      syncCheckboxes('cat', 'category-list');
+      syncCheckboxes('year', 'release-year-list');
+      syncCheckboxes('des', 'designer-list');
+      syncCheckboxes('fmt', 'format-list');
+
+      document.querySelectorAll('.custom-dropdown').forEach(dropdown => {
+        updateDropdownDisplayText(dropdown);
+      });
+    }
+    
+    function updateFilterCounts(fonts) {
+        const counterElement = document.getElementById('filter-results-counter');
+        if (!counterElement) return;
+        const fontCount = fonts.length;
+        const familyCodes = new Set(fonts.map(font => font['コード'].substring(0, 6)));
+        const familyCount = familyCodes.size;
+        counterElement.innerHTML = `該当： <span class="count-number">${familyCount}</span>ファミリー <span class="count-separator">/</span> <span class="count-number">${fontCount}</span>フォント`;
+    }
+    
+    function applyFiltersAndSort(shouldUpdateURL = true) {
+      if (shouldUpdateURL && !isInitialLoad) {
+        updateURLParams();
+      }
+
+      let filteredFonts = [...allFonts];
+      const sortOrderInput = document.querySelector('#sort-order-list input[type="radio"]:checked');
+      const sortOrder = sortOrderInput ? sortOrderInput.value : 'category';
+      const fontNameQuery = document.getElementById('search-font-name').value.toLowerCase();
+      
+      const selectedCategories = getSelectedCheckboxes('category-list');
+      const selectedYears = getSelectedCheckboxes('release-year-list').map(Number);
+      const selectedDesigners = getSelectedCheckboxes('designer-list');
+      const selectedFormats = getSelectedCheckboxes('format-list');
+      
+      if (fontNameQuery) {
+        filteredFonts = filteredFonts.filter(font => font['フォント名'].toLowerCase().includes(fontNameQuery));
+      }
+      if (selectedDesigners.length > 0) {
+        filteredFonts = filteredFonts.filter(font => {
+            if (!font['デザイナー']) return false;
+            const fontDesigners = font['デザイナー'].split('，').map(d => d.replace(/仮名：|漢字：|欧文：|和文：|仮名・欧文：|漢字・欧文：/g, '').trim());
+            return selectedDesigners.some(selected => fontDesigners.includes(selected));
+        });
+      }
+      if (selectedCategories.length > 0) {
+        filteredFonts = filteredFonts.filter(font => {
+            if (!font['カテゴリ']) return false;
+            const fontCategories = font['カテゴリ'].split('，');
+            return selectedCategories.some(cat => fontCategories.includes(cat));
+        });
+      }
+      if (selectedYears.length > 0) {
+        filteredFonts = filteredFonts.filter(font => selectedYears.includes(Number(font['リリース'])));
+      }
+      if (selectedFormats.length > 0) {
+          filteredFonts = filteredFonts.filter(font => {
+              return selectedFormats.some(formatName => {
+                  for (const [key, value] of Object.entries(tooltipMap)) {
+                      if (value === formatName) {
+                          const formatType = key.slice(0, 2);
+                          const formatValue = key.slice(2);
+                          return font[formatType] === formatValue;
+                      }
+                  }
+                  return false;
+              });
+          });
+      }
+
+      switch (sortOrder) {
+        case 'release-asc': filteredFonts.sort((a, b) => (a['リリース'] || 0) - (b['リリース'] || 0)); break;
+        case 'release-desc': filteredFonts.sort((a, b) => (b['リリース'] || 0) - (a['リリース'] || 0)); break;
+      }
+      
+      updateFilterCounts(filteredFonts);
+      renderFontTiles(filteredFonts);
+
+      const noResultsDiv = document.getElementById('no-results');
+      const hash = window.location.hash.substring(1);
+      const isInitialWithHash = isInitialLoad && hash;
+      
+      if (filteredFonts.length > 0) {
+        noResultsDiv.style.display = 'none';
+        let targetIndex = 0;
+        
+        if (isInitialWithHash) {
+            const foundIndex = filteredFonts.findIndex(f => f['コード'] === hash);
+            if (foundIndex !== -1) targetIndex = foundIndex;
+        } else if (activeFont) {
+            const foundIndex = filteredFonts.findIndex(f => f['コード'] === activeFont['コード']);
+            if (foundIndex !== -1) targetIndex = foundIndex;
+        }
+        
+        updateFontSample(filteredFonts[targetIndex], false);
+        
+        setTimeout(() => {
+          const tiles = document.querySelectorAll('.font-tile');
+          if (tiles[targetIndex]) {
+              tiles[targetIndex].classList.add('active');
+              if (isInitialWithHash) {
+                 tiles[targetIndex].scrollIntoView({ behavior: 'auto', block: 'center' });
+              }
+          }
+        }, 100); 
+      } else {
+        noResultsDiv.style.display = 'block';
+        document.getElementById('font-sample').innerHTML = '';
+        activeFont = null;
+      }
+    }
+    
+    function getSelectedCheckboxes(containerId) {
+        return Array.from(document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`))
+                    .map(cb => cb.value);
+    }
+    
+    function populateFilters() {
+      const sortOptions = { 'category': 'カテゴリ順', 'release-asc': 'リリースが古い順', 'release-desc': 'リリースが新しい順' };
+      populateRadioDropdown('sort-order-list', sortOptions, 'category');
+
+      const categories = [...new Set(
+        allFonts.flatMap(font => font['カテゴリ'] ? font['カテゴリ'].split('，') : [])
+      )].sort((a, b) => {
+         let indexA = masterCategoryOrder.indexOf(a);
+         let indexB = masterCategoryOrder.indexOf(b);
+         if (indexA === -1) indexA = 9999;
+         if (indexB === -1) indexB = 9999;
+         return indexA !== indexB ? indexA - indexB : a.localeCompare(b, 'ja');
+      });
+      populateCustomDropdown('category-list', categories);
+
+      const years = [...new Set(allFonts.map(f => f['リリース']).filter(Boolean))].sort((a, b) => b - a);
+      populateCustomDropdown('release-year-list', years);
+
+      const designers = [...new Set(
+        allFonts.flatMap(font => {
+          if (!font['デザイナー']) return [];
+          return font['デザイナー'].split('，').map(d => d.replace(/仮名：|漢字：|欧文：|和文：|仮名・欧文：|漢字・欧文：/g, '').trim());
+        }).filter(Boolean)
+      )].sort((a, b) => a.localeCompare(b, 'ja'));
+      populateCustomDropdown('designer-list', designers);
+      
+      const existingFormats = new Set();
+      allFonts.forEach(font => {
+        if (font['PS'] && font['PS'] !== "0") existingFormats.add(`PS${font['PS']}`);
+        if (font['TT'] && font['TT'] !== "0") existingFormats.add(`TT${font['TT']}`);
+        if (font['OT'] && font['OT'] !== "0") existingFormats.add(`OT${font['OT']}`);
+      });
+      const formats = Object.entries(tooltipMap)
+        .filter(([key]) => existingFormats.has(key))
+        .map(([, value]) => value);
+      populateCustomDropdown('format-list', [...new Set(formats)]);
+    }
+    
+    function populateCustomDropdown(containerId, items) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'custom-dropdown-item';
+            const uniqueId = `cb-${containerId}-${item.toString().replace(/[\s\(\)]/g, '-')}`;
+            div.innerHTML = `<input type="checkbox" value="${item}" id="${uniqueId}"><label for="${uniqueId}">${item}</label>`;
+            container.appendChild(div);
+        });
+    }
+    
+    function populateRadioDropdown(containerId, options, defaultKey) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        Object.entries(options).forEach(([key, value]) => {
+            const div = document.createElement('div');
+            div.className = 'custom-dropdown-item';
+            const uniqueId = `radio-${containerId}-${key}`;
+            const checked = key === defaultKey ? 'checked' : '';
+            div.innerHTML = `<input type="radio" name="${containerId}-radio" value="${key}" id="${uniqueId}" ${checked}><label for="${uniqueId}">${value}</label>`;
+            container.appendChild(div);
+        });
+    }
+
+    function setupEventListeners() {
+      const hamburgerButton = document.getElementById('hamburger-button');
+      hamburgerButton.addEventListener('click', () => {
+        document.body.classList.toggle('menu-open');
+        hamburgerButton.classList.toggle('active');
+      });
+
+      document.getElementById('search-font-name').addEventListener('input', () => applyFiltersAndSort(true));
+      
+      setupCustomDropdown('sort-order-dropdown');
+      setupCustomDropdown('category-dropdown');
+      setupCustomDropdown('release-year-dropdown');
+      setupCustomDropdown('designer-dropdown');
+      setupCustomDropdown('format-dropdown');
+
+      window.addEventListener('popstate', (e) => {
+        syncFormFromURL();
+        applyFiltersAndSort(false);
+
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+            const font = allFonts.find(f => f['コード'] === hash);
+            if (font) {
+                activeFont = font;
+                updateFontSample(font, true);
+                document.querySelectorAll('.font-tile').forEach(t => t.classList.remove('active'));
+                const targetTile = Array.from(document.querySelectorAll('.font-tile')).find(t => t.querySelector('.tile-svg')?.src.includes(hash + '.svg'));
+                if (targetTile) {
+                    targetTile.classList.add('active');
+                    targetTile.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+      });
+    }
+
+    function updateDropdownDisplayText(dropdown) {
+        const input = dropdown.querySelector('.custom-dropdown-input');
+        const listContainer = dropdown.querySelector('div[id$="-list"]');
+        const radio = listContainer.querySelector('input[type="radio"]:checked');
+        
+        if (radio) {
+          input.value = radio.nextElementSibling.textContent;
+        } else {
+          const selected = getSelectedCheckboxes(listContainer.id);
+          if (selected.length === 0) {
+              input.value = ''; // placeholderが表示されるように空にする
+              if (input.dataset.defaultPlaceholder) {
+                input.placeholder = input.dataset.defaultPlaceholder;
+              }
+          } else if (selected.length === 1) {
+              input.value = selected[0];
+          } else {
+              input.value = `${selected.length}件選択中`;
+          }
+        }
+    }
+
+    function setupCustomDropdown(dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+        const input = dropdown.querySelector('.custom-dropdown-input');
+        const list = dropdown.querySelector('.custom-dropdown-list');
+        const listContainer = list.querySelector('div[id$="-list"]');
+        const searchInDropdown = list.querySelector('.search-in-dropdown');
+        
+        if (!input.dataset.defaultPlaceholder) {
+            input.dataset.defaultPlaceholder = input.placeholder;
+        }
+
+        input.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isShowing = list.classList.contains('show');
+            closeAllDropdowns();
+            if (!isShowing) list.classList.add('show');
+        });
+
+        listContainer.addEventListener('change', (e) => {
+            if (e.target.type === 'radio') closeAllDropdowns();
+            updateDropdownDisplayText(dropdown);
+            applyFiltersAndSort(true);
+        });
+        
+        if (searchInDropdown) {
+          searchInDropdown.addEventListener('input', (e) => {
+              const query = e.target.value.toLowerCase();
+              listContainer.querySelectorAll('.custom-dropdown-item').forEach(item => {
+                  const label = item.querySelector('label').textContent.toLowerCase();
+                  item.style.display = label.includes(query) ? 'flex' : 'none';
+              });
+          });
+        }
+    }
+    
+    function closeAllDropdowns() {
+        document.querySelectorAll('.custom-dropdown-list.show').forEach(d => d.classList.remove('show'));
+    }
+    
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-dropdown')) closeAllDropdowns();
+        if (!e.target.closest('#side-menu') && !e.target.closest('#hamburger-button') && document.body.classList.contains('menu-open')) {
+             document.body.classList.remove('menu-open');
+             document.getElementById('hamburger-button').classList.remove('active');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', setupEventListeners);
+
+    function renderFontTiles(fontsToRender) {
+      const fontList = document.getElementById('font-list');
+      fontList.innerHTML = '';
+      fontsToRender.forEach((font, index) => {
+        const tile = document.createElement('div');
+        tile.className = 'font-tile';
+        tile.style.animationDelay = `${index * 0.01}s`;
+        tile.innerHTML = `
+          <div class="tile-square"></div>
+          <img class="tile-svg" src="../tile/${font["コード"]}.svg" alt="${font["フォント名"]}">
+          <div class="font-name-wrapper"><span class="font-name">${font["フォント名"]}</span></div>
+        `;
+        tile.addEventListener('click', () => {
+          if (activeFont && activeFont["コード"] === font["コード"]) return;
+          history.pushState(null, null, `${window.location.search}#${font["コード"]}`);
+          document.querySelectorAll('.font-tile').forEach(t => t.classList.remove('active'));
+          tile.classList.add('active');
+          updateFontSample(font);
+        });
+        fontList.appendChild(tile);
+        
+        const fontNameSpan = tile.querySelector('.font-name');
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+              const targetWidth = 180;
+              const currentWidth = fontNameSpan.scrollWidth;
+              if (currentWidth > targetWidth) fontNameSpan.style.transform = `scaleX(${targetWidth / currentWidth})`;
+          });
+        }, index * 70);
+      });
+    }
+
+    function createSampleContent(font) {
+      activeFont = font;
+      const container = document.createElement('div');
+      container.className = 'sample-container';
+      const createInfoGroupHTML = (label, value) => {
+        if (!value) return '';
+        let valContent = value, valClass = 'info-value';
+        if (label === 'リリース') valContent = `${value}<span style="font-size: 10px; margin-left: 1px;">年</span>`;
+        else if (label === 'デザイナー') {
+            valContent = value.replace(/仮名：|漢字：|欧文：|和文：|仮名・欧文：|漢字・欧文：/g, m => `<span style="font-size: 10px;">${m}</span>`);
+            valClass += ' design-info-value';
+        }
+        return `<div class="info-divider"></div><div class="info-item-group"><span class="info-label">${label}</span><span class="${valClass}">${valContent}</span></div>`;
+      };
+      const leftHTML = `<div class="info-font-name">${font["フォント名"]}</div>${createInfoGroupHTML('カテゴリ', font['カテゴリ'])}${createInfoGroupHTML('メーカー', font['メーカー'])}${createInfoGroupHTML('リリース', font['リリース'])}${createInfoGroupHTML('デザイナー', font['デザイナー'])}`;
+      const rightParts = [], dividerHTML = `<div class="info-divider"></div>`;
+      if (font["旧"] === "1") rightParts.push(`<div class="toggle-container"><label><input type="radio" name="font-version-${font["コード"]}" value="old"> <span class="toggle-label-text">旧</span></label><label><input type="radio" name="font-version-${font["コード"]}" value="new" checked> <span class="toggle-label-text">新</span></label></div>`);
+      const createIconHTML = (fmt, val) => {
+          if (!val || val === "0") return '';
+          const key = `${fmt}${val}`, tooltip = tooltipMap[key] || '';
+          return `<div class="format-icon-wrapper"><img src="../assets/${key}.svg" alt="${tooltip}"><span class="tooltip-text">${tooltip}</span></div>`;
+      };
+      const iconsHTML = [createIconHTML('PS', font['PS']), createIconHTML('TT', font['TT']), createIconHTML('OT', font['OT'])].join('');
+      if (iconsHTML) rightParts.push(`<div class="format-icons">${iconsHTML}</div>`);
+      let rightHTML = rightParts.length ? dividerHTML + rightParts.join(dividerHTML) : '';
+      const desc = (font["説明"] || '').replace(/。/g, '。 ');
+      container.innerHTML = `<div class="font-info-wrapper"><div class="font-info-left">${leftHTML}</div><div class="font-info-right">${rightHTML}</div></div><div class="sample-divider-line"></div><img class="sample-text-svg" id="text-svg-${font["コード"]}" src="../text/${font["コード"]}.svg" alt="Sample Text"><div class="font-description"><span>${desc}</span></div>`;
+      
+      requestAnimationFrame(() => {
+          const fn = container.querySelector('.info-font-name');
+          if (fn && fn.scrollWidth > 250) {
+            fn.style.transform = `scaleX(${250 / fn.scrollWidth})`; fn.style.transformOrigin = 'left'; fn.style.marginRight = `-${fn.scrollWidth - 250}px`;
+          }
+      });
+      container.querySelectorAll(`input[name="font-version-${font["コード"]}"]`).forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          const svg = container.querySelector(`#text-svg-${font["コード"]}`);
+          if (svg) svg.src = e.target.value === 'old' ? `../text/${font["コード"]}_old.svg` : `../text/${font["コード"]}.svg`;
+        });
+      });
+      return container;
+    }
+
+    function updateFontSample(font, animate = true) {
+      if (transitionTimeoutId) clearTimeout(transitionTimeoutId);
+      const fs = document.getElementById('font-sample'), nc = createSampleContent(font);
+      if (!animate) { fs.innerHTML = ''; fs.appendChild(nc); return; }
+      const oc = fs.querySelectorAll('.sample-container');
+      nc.style.opacity = '0'; fs.appendChild(nc);
+      requestAnimationFrame(() => { oc.forEach(c => c.style.opacity = '0'); nc.style.opacity = '1'; });
+      if (oc.length) transitionTimeoutId = setTimeout(() => oc.forEach(c => c.parentNode === fs && fs.removeChild(c)), 350);
+    }
+  </script>
+  <script src="../assets/fontlist.xlsx.jsonp"></script>
+</body>
+</html>
